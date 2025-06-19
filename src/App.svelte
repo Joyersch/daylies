@@ -16,7 +16,22 @@
 		low: 3,
 	};
 
-	onMount(() => {});
+	onMount(() => {
+		const stored = JSON.parse(localStorage.getItem("notes") || "[]");
+		const today = new Date();
+		today.setHours(0, 0, 0, 0); // midnight today
+
+		notes = stored.map((note) => {
+			if (
+				note.completed &&
+				note.completedAt &&
+				new Date(note.completedAt) < today
+			) {
+				return { ...note, completed: false, completedAt: null };
+			}
+			return note;
+		});
+	});
 
 	$: sortedNotes = [...notes].sort((a, b) => {
 		if (a.completed !== b.completed) return a.completed ? 1 : -1;
