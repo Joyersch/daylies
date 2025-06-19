@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from "svelte";
-	import Task from "./Task.svelte";
-	import TaskModal from "./TaskModal.svelte";
+	import Node from "./Note.svelte";
+	import NodeModal from "./NoteModal.svelte";
 
 	let notes = JSON.parse(localStorage.getItem("notes") ?? "[]");
 
@@ -75,7 +75,7 @@
 <main>
 	<div class="notes-container">
 		{#each sortedNotes as note, i}
-			<Task
+			<Node
 				name={note.name}
 				description={note.description}
 				severity={note.severity}
@@ -92,7 +92,7 @@
 			+
 		</button>
 	</div>
-	<TaskModal
+	<NodeModal
 		show={showModal}
 		note={currentEditNote}
 		on:save={(e) => saveNote(e.detail)}

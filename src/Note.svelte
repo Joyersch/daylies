@@ -5,7 +5,6 @@
     export let description = "";
     export let severity = "low";
     export let completed = false;
-    export let completedAt = null;
 
     const dispatch = createEventDispatcher();
 
