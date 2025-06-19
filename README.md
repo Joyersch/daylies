@@ -1,1 +1,1 @@
-# daylies
+# Dailies app is a simple tool for tracking and completing daily task
