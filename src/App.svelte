@@ -1,7 +1,13 @@
 <script>
 	import { onMount } from "svelte";
 	import Task from "./Task.svelte";
-	let notes = [];
+	import TaskModal from "./TaskModal.svelte";
+
+	let notes = JSON.parse(localStorage.getItem("notes") ?? "[]");
+
+	let showModal = false;
+	let currentEditNote = null;
+	let editIndex = -1;
 
 	const severityOrder = {
 		critical: 0,
@@ -10,51 +16,88 @@
 		low: 3,
 	};
 
+	onMount(() => {});
+
 	$: sortedNotes = [...notes].sort((a, b) => {
 		if (a.completed !== b.completed) return a.completed ? 1 : -1;
-
 		return severityOrder[a.severity] - severityOrder[b.severity];
 	});
 
-	function toggleNoteCompletion(index) {
+	$: localStorage.setItem("notes", JSON.stringify(notes));
+
+	function toggleNoteCompletion(index, update) {
 		notes = notes.map((note, i) => {
 			if (i === index) {
-				return { ...note, completed: !note.completed };
+				return update;
 			}
 			return note;
 		});
 	}
 
-	onMount(async () => {
-		const res = await fetch("/api/tasks");
-		notes = (await res?.json()) ?? [];
-	});
+	function openNewNoteModal() {
+		currentEditNote = {
+			name: "",
+			description: "",
+			severity: "low",
+			completed: false,
+			completedAt: null,
+		};
+		editIndex = -1;
+		showModal = true;
+	}
 
-	async function saveNotes() {
-		await fetch("/api/tasks", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(notes),
-		});
+	function openEditNoteModal(note, index) {
+		currentEditNote = note;
+		editIndex = index;
+		showModal = true;
+	}
+
+	function saveNote(note) {
+		if (editIndex == -1) {
+			showModal = false;
+			notes = [...notes, note];
+			return;
+		}
+
+		notes[editIndex] = { ...note };
+		showModal = false;
+	}
+
+	function cancelModal() {
+		showModal = false;
+	}
+
+	function removeNote(noteToRemove) {
+		notes = notes.filter((note) => note !== noteToRemove);
 	}
 </script>
 
 <main>
 	<div class="notes-container">
-		{#each sortedNotes as note}
+		{#each sortedNotes as note, i}
 			<Task
 				name={note.name}
 				description={note.description}
 				severity={note.severity}
-				bind:completed={note.completed}
-				onToggle={() => toggleNoteCompletion(notes.indexOf(note))}
+				completedAt={note.completedAt}
+				completed={note.completed}
+				on:complete={(e) =>
+					toggleNoteCompletion(notes.indexOf(note), e.detail)}
+				on:delete={() => removeNote(note)}
+				on:edit={() => openEditNoteModal(note, notes.indexOf(note))}
 			/>
 		{/each}
 
-		<div class="sticky-note new-note">
-			<button>+</button>
-		</div>
+		<button class="sticky-note new-note" on:click={openNewNoteModal}>
+			+
+		</button>
 	</div>
+	<TaskModal
+		show={showModal}
+		note={currentEditNote}
+		on:save={(e) => saveNote(e.detail)}
+		on:cancel={cancelModal}
+	/>
 </main>
 
 <style>
@@ -63,13 +106,6 @@
 		padding: 1em;
 		max-width: 240px;
 		margin: 0 auto;
-	}
-
-	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
 	}
 
 	@media (min-width: 640px) {
@@ -95,23 +131,20 @@
 		height: 150px;
 		background-color: #eeeeee;
 		border: 2px dashed #999;
-		border-radius: 8px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		cursor: pointer;
 		transition: background-color 0.2s;
+
+		/* Reset button styles */
+		background: #eeeeee;
+		border: 2px dashed #999;
+		font-size: 2rem;
+		color: #333;
 	}
 
 	.sticky-note.new-note:hover {
-		background-color: #ddd;
-	}
-
-	.sticky-note.new-note button {
-		font-size: 2rem;
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: #333;
+		background-color: #e0e0e0;
 	}
 </style>
