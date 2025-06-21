@@ -3,7 +3,7 @@
 	import Node from "./Note.svelte";
 	import NodeModal from "./NoteModal.svelte";
 
-	let notes = JSON.parse(localStorage.getItem("notes") ?? "[]");
+	let notes = JSON.parse(localStorage.getItem("notes") || "[]");
 
 	let showModal = false;
 	let currentEditNote = null;
@@ -18,27 +18,91 @@
 
 	onMount(() => {
 		const stored = JSON.parse(localStorage.getItem("notes") || "[]");
-		const today = new Date();
-		today.setHours(0, 0, 0, 0); // midnight today
+		notes = processStoredNotes(stored);
+	});
 
-		notes = stored.map((note) => {
-			if (
-				note.completed &&
-				note.completedAt &&
-				new Date(note.completedAt) < today
-			) {
-				return { ...note, completed: false, completedAt: null };
-			}
-			return note;
+	$: sortedNotes = (notes || [])
+		.filter((n) => n && typeof n === "object")
+		.sort((a, b) => {
+			if (a.completed !== b.completed) return a.completed ? 1 : -1;
+			return severityOrder[a.severity] - severityOrder[b.severity];
 		});
-	});
-
-	$: sortedNotes = [...notes].sort((a, b) => {
-		if (a.completed !== b.completed) return a.completed ? 1 : -1;
-		return severityOrder[a.severity] - severityOrder[b.severity];
-	});
 
 	$: localStorage.setItem("notes", JSON.stringify(notes));
+
+	function processStoredNotes(stored) {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		function getStartOfWeek(date) {
+			const day = date.getDay();
+			const diff = (day === 0 ? -6 : 1) - day;
+			const monday = new Date(date);
+			monday.setDate(date.getDate() + diff);
+			monday.setHours(0, 0, 0, 0);
+			return monday;
+		}
+
+		function getStartOfMonth(date) {
+			const first = new Date(date.getFullYear(), date.getMonth(), 1);
+			first.setHours(0, 0, 0, 0);
+			return first;
+		}
+
+		notes = stored
+			.map((note) => {
+				if (!note.completed || !note.completedAt) {
+					return note;
+				}
+
+				const completedAt = new Date(note.completedAt);
+				completedAt.setHours(0, 0, 0, 0);
+
+				const reset = note.resetOn || "n";
+
+				let shouldReset = false;
+
+				switch (reset) {
+					case "d":
+						shouldReset = completedAt < today;
+						break;
+					case "w":
+						const weekStart = getStartOfWeek(today);
+						shouldReset = completedAt < weekStart;
+						break;
+					case "m":
+						const monthStart = getStartOfMonth(today);
+						shouldReset = completedAt < monthStart;
+						break;
+					case "n":
+						if (note.removeAfter === -1) {
+							return note;
+						}
+
+						const expirationDate = new Date(completedAt);
+						expirationDate.setDate(
+							expirationDate.getDate() + note.removeAfter,
+						);
+						expirationDate.setHours(0, 0, 0, 0);
+
+						if (expirationDate < today) {
+							return;
+						}
+
+					default:
+						shouldReset = false;
+				}
+
+				if (shouldReset) {
+					return { ...note, completed: false, completedAt: null };
+				}
+
+				return note;
+			})
+			.filter((note) => note != null);
+
+		return notes;
+	}
 
 	function toggleNoteCompletion(index, update) {
 		notes = notes.map((note, i) => {
@@ -56,6 +120,8 @@
 			severity: "low",
 			completed: false,
 			completedAt: null,
+			resetOn: "d",
+			removeAfter: -1,
 		};
 		editIndex = -1;
 		showModal = true;
@@ -152,7 +218,6 @@
 		cursor: pointer;
 		transition: background-color 0.2s;
 
-		/* Reset button styles */
 		background: #eeeeee;
 		border: 2px dashed #999;
 		font-size: 2rem;

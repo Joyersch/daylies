@@ -5,6 +5,7 @@
     export let description = "";
     export let severity = "low";
     export let completed = false;
+    export let completedAt = null;
 
     const dispatch = createEventDispatcher();
 
@@ -35,6 +36,15 @@
     function handleDelete(event) {
         event.stopPropagation();
         dispatch("delete");
+    }
+
+    function formatDate(timestamp) {
+        if (!timestamp) return "";
+        const date = new Date(timestamp);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     }
 </script>
 
@@ -90,6 +100,10 @@
     <button on:click={toggleComplete}>
         {completed ? "Undo" : "Complete"}
     </button>
+
+    {#if completedAt}
+        <small class="completedAt">{formatDate(completedAt)}</small>
+    {/if}
 </div>
 
 <style>
@@ -110,7 +124,6 @@
         opacity: 0.7;
     }
 
-    /* Container for the top-left buttons */
     .top-left-buttons {
         position: absolute;
         top: 6px;
@@ -120,7 +133,6 @@
         z-index: 10;
     }
 
-    /* Icon buttons styling */
     button.icon {
         background: transparent;
         border: none;
@@ -165,5 +177,14 @@
 
     button:not(.icon):hover {
         background-color: #45a049;
+    }
+
+    .completedAt {
+        position: absolute;
+        bottom: 6px;
+        right: 10px;
+        font-size: 0.75rem;
+        color: #333;
+        opacity: 0.8;
     }
 </style>

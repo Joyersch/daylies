@@ -12,7 +12,47 @@
         name: "",
         description: "",
         severity: "low",
+        resetOn: "n",
+        removeAfter: -1,
     };
+
+    let resetRadioOptions = [
+        {
+            value: "n",
+            label: "Never",
+        },
+        {
+            value: "d",
+            label: "Daily",
+        },
+        {
+            value: "w",
+            label: "Weekly",
+        },
+        {
+            value: "m",
+            label: "Monthly",
+        },
+    ];
+
+    let removeRadioOptions = [
+        {
+            value: -1,
+            label: "Never",
+        },
+        {
+            value: 3,
+            label: "3 Days",
+        },
+        {
+            value: 5,
+            label: "5 Days",
+        },
+        {
+            value: 7,
+            label: "7 Day",
+        },
+    ];
 
     function handleSave(event) {
         event.stopPropagation();
@@ -77,6 +117,44 @@
                 </select>
             </label>
 
+            <label class="reset">
+                Reset frequency:
+                <div class="radios">
+                    {#each resetRadioOptions as option, i}
+                        <div class="radio">
+                            <input
+                                type="radio"
+                                id="1-{i}"
+                                bind:group={localNote.resetOn}
+                                value={option.value}
+                            />
+                            <label for="1-{i}"> {option.label} </label>
+                        </div>
+                    {/each}
+                </div>
+            </label>
+
+            {#if localNote.resetOn === "n"}
+                <label class="remove">
+                    Remove after:
+                    <div class="radios">
+                        {#each removeRadioOptions as option, i}
+                            <div class="radio">
+                                <input
+                                    type="radio"
+                                    id="2-{i}"
+                                    bind:group={localNote.removeAfter}
+                                    value={option.value}
+                                />
+                                <label for="2-{i}">
+                                    {option.label}
+                                </label>
+                            </div>
+                        {/each}
+                    </div>
+                </label>
+            {/if}
+
             <div class="modal-actions">
                 <button on:click={handleSave}>Save</button>
                 <button on:click={handleCancel}>Cancel</button>
@@ -93,21 +171,21 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 9999; /* Ensure modal is above everything */
+        z-index: 9999;
     }
 
     .modal {
         background: white;
-        padding: 2.4rem; /* ~20% bigger from 2rem */
+        padding: 2.4rem;
         border-radius: 8px;
-        width: 360px; /* 20% bigger than 300px */
+        width: 320px;
         max-width: 90vw;
         display: flex;
         flex-direction: column;
         gap: 1.2rem;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         position: relative;
-        z-index: 10000; /* Ensure modal content is on top */
+        z-index: 10000;
         font-family: system-ui, sans-serif;
     }
 
@@ -137,7 +215,7 @@
     textarea:focus,
     select:focus {
         outline: none;
-        border-color: #3b82f6; /* nice blue accent */
+        border-color: #3b82f6;
         background-color: white;
         box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
     }
@@ -175,9 +253,29 @@
     }
 
     .error {
-        color: #dc2626; /* red */
+        color: #dc2626;
         font-size: 0.9rem;
         margin-top: -0.5rem;
         margin-bottom: 0.5rem;
+    }
+
+    .reset {
+        width: 100%;
+        margin: 0px 1vw 0px 1vw;
+    }
+    .radio {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex: 1;
+    }
+
+    input[type="radio"] {
+        margin: 0px;
+    }
+    .radios {
+        display: flex;
+        flex-direction: row;
+        margin: 0.3rem;
     }
 </style>
