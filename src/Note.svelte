@@ -19,9 +19,6 @@
     function toggleComplete(event) {
         event.stopPropagation();
         const updated = {
-            name,
-            description,
-            severity,
             completed: !completed,
             completedAt: !completed ? Date.now() : null,
         };

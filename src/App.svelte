@@ -107,7 +107,11 @@
 	function toggleNoteCompletion(index, update) {
 		notes = notes.map((note, i) => {
 			if (i === index) {
-				return update;
+				return {
+					...note,
+					completed: update.completed,
+					completedAt: update.completedAt,
+				};
 			}
 			return note;
 		});
